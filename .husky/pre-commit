@@ -1,0 +1,6 @@
+#!/bin/sh
+# .husky/pre-commit
+# Runs the docs check via Taskfile.
+# This ensures Claude cannot commit source changes without updating docs.
+
+task docs:check

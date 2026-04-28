@@ -1,0 +1,6 @@
+#!/bin/sh
+# .husky/commit-msg
+# Validates commit message format against Conventional Commits spec.
+# Message must match: <type>(<scope>): <description>
+
+pnpm commitlint --edit "$1"

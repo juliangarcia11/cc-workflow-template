@@ -1,0 +1,202 @@
+version: '3'
+
+dotenv: ['.env', '.env.local']
+
+vars:
+  # Detect staged source files for docs-check
+  STAGED_SRC:
+    sh: git diff --cached --name-only 2>/dev/null | grep -E '^src/' || true
+  STAGED_DOCS:
+    sh: git diff --cached --name-only 2>/dev/null | grep -E '^docs/' || true
+
+tasks:
+
+  # ─── Checks ────────────────────────────────────────────────────────────────
+
+  check:
+    desc: Run all checks (lint + test + docs-check)
+    cmds:
+      - task: lint
+      - task: test
+      - task: docs:check
+    silent: false
+
+  lint:
+    desc: Run ESLint and Prettier check
+    cmds:
+      - pnpm eslint . --max-warnings 0
+      - pnpm prettier --check .
+    sources:
+      - 'src/**/*.{ts,tsx,js,jsx}'
+      - '*.{ts,js,json}'
+
+  lint:fix:
+    desc: Auto-fix lint and formatting issues
+    cmds:
+      - pnpm eslint . --fix
+      - pnpm prettier --write .
+
+  test:
+    desc: Run the full test suite
+    cmds:
+      - pnpm test run
+    # Replace 'pnpm test run' with your test runner command, e.g.:
+    # - pnpm jest
+    # - pnpm vitest run
+    # - pnpm playwright test
+
+  test:watch:
+    desc: Run tests in watch mode
+    cmds:
+      - pnpm test
+
+  # ─── Docs ──────────────────────────────────────────────────────────────────
+
+  docs:check:
+    desc: Verify docs are updated when source files are staged
+    cmds:
+      - |
+        STAGED_SRC=$(git diff --cached --name-only | grep -E '^src/' || true)
+        STAGED_DOCS=$(git diff --cached --name-only | grep -E '^docs/' || true)
+        if [ -n "$STAGED_SRC" ] && [ -z "$STAGED_DOCS" ]; then
+          echo ""
+          echo "  ✗ DOCS CHECK FAILED"
+          echo ""
+          echo "  Source files are staged but no docs/ files were updated."
+          echo "  Before committing, update at least one of:"
+          echo "    - docs/plans/   (if this completes or changes a plan)"
+          echo "    - docs/adr/     (if this involves an architectural decision)"
+          echo "    - docs/specs/   (if this changes feature behaviour)"
+          echo "    - docs/chats/   (if this session had meaningful decisions)"
+          echo ""
+          echo "  Then stage the doc file and run 'task commit' again."
+          echo ""
+          exit 1
+        fi
+        echo "  ✓ Docs check passed"
+
+  adr:
+    desc: Scaffold a new Architecture Decision Record
+    vars:
+      NEXT:
+        sh: |
+          last=$(ls docs/adr/*.md 2>/dev/null | grep -oE '[0-9]{4}' | sort | tail -1)
+          printf "%04d" $((${last:-0} + 1))
+      SLUG: '{{.SLUG | default "new-decision"}}'
+    cmds:
+      - |
+        FILE="docs/adr/{{.NEXT}}-{{.SLUG}}.md"
+        cat > "$FILE" << 'EOF'
+        # {{.NEXT}}. [Title]
+
+        Date: $(date +%Y-%m-%d)
+        Status: Proposed
+        <!-- Status options: Proposed | Accepted | Deprecated | Superseded by [NNNN] -->
+
+        ## Context
+
+        <!-- What situation or problem prompted this decision? -->
+
+        ## Decision
+
+        <!-- What did we decide to do? -->
+
+        ## Consequences
+
+        <!-- What becomes easier or harder as a result? Any tradeoffs? -->
+
+        ## Alternatives Considered
+
+        <!-- What else did we consider and why did we not choose it? -->
+        EOF
+        echo "Created $FILE"
+        echo "Edit the file, then run: git add $FILE"
+    interactive: false
+
+  spec:
+    desc: Scaffold a new feature spec
+    vars:
+      NAME: '{{.NAME | default "new-feature"}}'
+    cmds:
+      - |
+        FILE="docs/specs/{{.NAME}}.md"
+        cat > "$FILE" << 'EOF'
+        # Feature Spec: [Name]
+
+        Date: $(date +%Y-%m-%d)
+        Status: Draft
+        <!-- Status options: Draft | Approved | In Progress | Complete -->
+
+        ## Overview
+
+        <!-- One paragraph: what this feature does and why. -->
+
+        ## Scope
+
+        ### In scope
+        -
+
+        ### Out of scope
+        -
+
+        ## Acceptance Criteria
+
+        <!-- These become your tests. Be precise. -->
+        - [ ]
+        - [ ]
+
+        ## Open Questions
+
+        <!-- Resolve all of these before implementation starts. -->
+        - [ ]
+
+        ## Notes
+
+        <!-- Design decisions, references, links to related ADRs. -->
+        EOF
+        echo "Created $FILE"
+
+  summary:
+    desc: Remind Claude to write a chat summary before the session ends
+    cmds:
+      - |
+        echo ""
+        echo "  Paste this into your Claude session:"
+        echo ""
+        echo "  ─────────────────────────────────────────────────────────"
+        echo "  Before we end this session, write a chat summary to"
+        echo "  docs/chats/$(date +%Y-%m-%d)-<topic>.md that includes:"
+        echo "  1. What we were trying to accomplish"
+        echo "  2. Decisions made and the reasoning behind them"
+        echo "  3. What was deferred or left unresolved"
+        echo "  4. Any follow-up tasks"
+        echo "  ─────────────────────────────────────────────────────────"
+        echo ""
+
+  # ─── Commit ────────────────────────────────────────────────────────────────
+
+  commit:
+    desc: Run all checks then commit (set MSG="your message")
+    vars:
+      MSG: '{{.MSG | default ""}}'
+    cmds:
+      - task: check
+      - |
+        if [ -z "{{.MSG}}" ]; then
+          echo ""
+          echo "  Usage: task commit MSG='feat(scope): description'"
+          echo ""
+          echo "  Types: feat | fix | docs | chore | refactor | test | style | ci"
+          echo "  Example: task commit MSG='feat(auth): add login page'"
+          echo ""
+          exit 1
+        fi
+      - git commit -m "{{.MSG}}"
+
+  commit:quick:
+    desc: Stage all changes and commit (set MSG="your message")
+    cmds:
+      - git add -A
+      - task: commit
+        vars:
+          MSG: '{{.MSG}}'

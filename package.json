@@ -1,0 +1,26 @@
+{
+  "name": "cc-workflow-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Template repo for Claude-assisted development workflow",
+  "scripts": {
+    "prepare": "husky",
+    "test": "echo \"[CUSTOMIZE] Replace with your test runner\" && exit 0",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "prettier": "^3.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
