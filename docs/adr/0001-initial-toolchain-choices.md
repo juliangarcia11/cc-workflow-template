@@ -43,6 +43,14 @@ We will use the following tools, each responsible for a different layer:
 | lint-staged | Useful for large repos but adds complexity before it's needed; can be added later |
 | npm/yarn | pnpm is faster and enforces stricter dependency isolation |
 
+## Addendum — 2026-05-12
+
+Two issues found during first use of the template:
+
+1. **`task adr` always generated `0001`** — `ls docs/adr/*.md` glob failed in the sh context on Windows, making `last` empty and the counter always reset to 1. Fixed by switching to `ls docs/adr/` (directory listing) and anchoring the grep pattern to `^[0-9]{4}` so only leading digits in filenames are matched.
+
+2. **`docs/bugs/` folder added** — a new convention for tracking bugs discovered during implementation that are out of scope for the current session. Comes with a `task bug` scaffold command and a README. The `docs:check` failure message was updated to list it as a valid doc target alongside plans, ADRs, specs, and chats.
+
 ## References
 
 - [Taskfile docs](https://taskfile.dev)

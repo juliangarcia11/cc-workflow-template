@@ -68,6 +68,7 @@ tasks:
           echo "    - docs/adr/     (if this involves an architectural decision)"
           echo "    - docs/specs/   (if this changes feature behaviour)"
           echo "    - docs/chats/   (if this session had meaningful decisions)"
+          echo "    - docs/bugs/    (if a bug was discovered and deferred)"
           echo ""
           echo "  Then stage the doc file and run 'task commit' again."
           echo ""
@@ -80,7 +81,7 @@ tasks:
     vars:
       NEXT:
         sh: |
-          last=$(ls docs/adr/*.md 2>/dev/null | grep -oE '[0-9]{4}' | sort | tail -1)
+          last=$(ls docs/adr/ 2>/dev/null | grep -oE '^[0-9]{4}' | sort | tail -1)
           printf "%04d" $((${last:-0} + 1))
       SLUG: '{{.SLUG | default "new-decision"}}'
     cmds:
@@ -153,6 +154,44 @@ tasks:
         ## Notes
 
         <!-- Design decisions, references, links to related ADRs. -->
+        EOF
+        echo "Created $FILE"
+
+  bug:
+    desc: Scaffold a new deferred bug report
+    vars:
+      SLUG: '{{.SLUG | default "untitled-bug"}}'
+    cmds:
+      - |
+        FILE="docs/bugs/$(date +%Y-%m-%d)-{{.SLUG}}.md"
+        cat > "$FILE" << 'EOF'
+        # Bug: [Short Title]
+
+        Date: $(date +%Y-%m-%d)
+        Discovered during: <!-- feature or fix that surfaced this -->
+        Status: Deferred
+
+        ## Description
+
+        <!-- What went wrong? What was the unexpected behaviour? -->
+
+        ## Steps to Reproduce
+
+        1.
+        2.
+
+        ## Expected vs Actual
+
+        - **Expected:**
+        - **Actual:**
+
+        ## Proposed Fix
+
+        <!-- Optional: initial hypothesis or pointer to relevant code -->
+
+        ## Notes
+
+        <!-- Any context that will help the next session pick this up -->
         EOF
         echo "Created $FILE"
 

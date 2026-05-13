@@ -76,6 +76,10 @@ A good chat summary includes:
 - What was left unresolved or deferred
 - Any follow-up tasks
 
+### docs/bugs/ — Deferred Bug Reports
+
+Use when a bug is discovered during implementation but is out of scope for the current session. Scaffold with `task bug SLUG=short-description`. One file per bug; mark `Status: Fixed` (with a commit link) when resolved — do not delete.
+
 ### docs/plans/ — Project Plans and Todo Lists
 
 Active work lives here. A plan file is created before implementation begins
